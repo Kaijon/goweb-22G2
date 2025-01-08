@@ -1,6 +1,6 @@
 module getac/goWeb
 
-go 1.21.11
+go 1.22.7
 
 require (
 	github.com/deepch/vdk v0.0.27
