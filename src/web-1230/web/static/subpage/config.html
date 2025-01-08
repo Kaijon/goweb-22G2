@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuration page</title>
+
+    <script>
+        var oinfoTimer;
+        // Document Ready Event
+        $(document).ready(function () {
+            // Update Project Code
+            document.getElementById("txt_groupName1").placeholder = "default value: " + projectCode;
+
+            console.log("config.html DOM ready! MQTT is connected:" + isMqttConnected);
+            if (isMqttConnected == true) {
+                defaultTopicSubscribes();
+            }
+            //else
+                // set inner timer
+                //oinfoTimer = setInterval(doInnerChk, 1000);
+        });
+        function doInnerChk() { // we will use this function to display upload speed
+            console.log("doInnerChk() called!")
+            if (isMqttConnected == true) {
+                defaultTopicSubscribes();
+                clearTimeout(oinfoTimer);
+            }
+        }
+
+        function defaultTopicSubscribes() {
+            console.log("defaultTopicSubscribes() called!");
+            // Subscribe to the default topic
+            subscribeTopic(SUB_GROUPNAME_TOPIC);
+            subscribeTopic(SUB_SNIFFMODE_TOPIC);
+            subscribeTopic(SUB_DURATIONTIME_TOPIC);
+            subscribeTopic(SUB_GPIOAND_TOPIC);
+            subscribeTopic(SUB_GPIOSTOP_TOPIC);
+            subscribeTopic(SUB_CRASH_TOPIC);
+        }
+    </script>
+</head>
+
+<body>
+
+    <div><br></div>
+    <div class="card-container">
+        <div class="card" style="max-width: 500px;">
+            <div class="header">Trigger Settings</div>
+            <hr>
+            <div class="card-body">
+                <form id="inputForm">
+                    <div class="form-group">
+                        <label for="groupName1">group Name 1:</label>
+                        <input type="text" class="form-control" id="txt_groupName1" name="groupName1" maxlength="6"
+                            placeholder="default value: projectCode">
+                    </div>
+                    <div class="form-group">
+                        <label for="groupName2">group Name 2:</label>
+                        <input type="text" class="form-control" id="txt_groupName2" name="groupName2" maxlength="6"
+                            placeholder="null (means no input)">
+                    </div>
+                    <div class="form-group">
+                        <label for="groupName3">group Name 3:</label>
+                        <input type="text" class="form-control" id="txt_groupName3" name="groupName3" maxlength="6"
+                            placeholder="null (means no input)">
+                    </div>
+                    <div class="form-group">
+                        <label for="groupName4">group Name 4:</label>
+                        <input type="text" class="form-control" id="txt_groupName4" name="groupName4" maxlength="6"
+                            placeholder="null (means no input)">
+                    </div>
+                    <div class="form-group">
+                        <label for="groupName5">group Name 5:</label>
+                        <input type="text" class="form-control" id="txt_groupName5" name="groupName5" maxlength="6"
+                            placeholder="null (means no input)">
+                    </div>
+                    <div class="form-group">
+                        <label for="sniffMode">sniff Mode:</label>
+                        <select class="form-control" id="sel_sniffMode" name="sniffMode"
+                            title="ON: listen BWC broadcast recording event and then do broadcast, too.">
+                            <option value="0">0: off (default)</option>
+                            <option value="1">1: on</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="durationTime">duration Time (20-1200s):</label>
+                        <input type="number" class="form-control" id="txt_durationTime" name="durationTime" required
+                            min="20" max="1200" title="default value is 30 (means 30s)"
+                            onchange="if (this.value > 1200) this.value = 1200; if (this.value < 20) this.value = 20;">
+                    </div>
+                    <div class="form-group">
+                        <label for="gpio">GPIO: (bit 0~7)</label>
+                        <div style="margin-left: 20px;">
+                            <div class="form-group">
+                                <label for="gpioAnd" style="margin-left: -20px;">AND byte:</label>
+                                <input type="text" class="form-control" id="txt_gpioAnd" name="gpioAnd" maxlength="2"
+                                    pattern="[0-9a-fA-F]{2}" title="60 means pin 5,6 is AND pin">
+                            </div>
+                            <div class="form-group">
+                                <label for="gpioStop" style="margin-left: -20px;">STOP byte:</label>
+                                <input type="text" class="form-control" id="txt_gpioStop" name="gpioStop" maxlength="2"
+                                    pattern="[0-9a-fA-F]{2}" title="80 means pin 7 is stop pin">
+                            </div>
+                        </div>
+                    </div>
+                    <hr style="height: 1px; border: none; background: radial-gradient(circle, white, lightgray);">
+                    <input type="button" value="Submit Changes" onclick="submitData()" />
+                </form>
+            </div>
+        </div>
+        <div class="card" style="max-width: 500px;">
+            <div class="header">Sensor configurations</div>
+            <hr>
+            <div class="card-body">
+                <div class="form-inline">
+                    <label for="gValueThreshold">crash sensor threshold (2-16): </label>
+                    <input type="text" class="form-control" id="sel_crash" name="gValueThreshold" maxlength="2" required
+                        min="2" max="16" title="default value is 2 (means 2g)"
+                        onchange="if (this.value > 16) this.value = 16; if (this.value < 2) this.value = 2;"
+                        style="width: 20%;">
+                    <input type="button" value="Set" onclick="submitCrashData()"
+                        style="width: 20%; height: 25px; padding:5px; font-size: 0.7em; float: right;" />
+                </div>
+            </div>
+        </div>
+        <div class="card" style="max-width: 500px;">
+            <div class="header">Misc</div>
+            <hr>
+            <div class="card-body">
+                <!-- sync time button for getting pc local time followed ISO8601 and push to MQTT -->
+                <button class="btn-primary" onclick="syncPCTime()">
+                    <i class="fa-solid fa-clock-rotate-left"></i> Sync PC Time to device
+                </button>
+                <button id="getLogButton" class="btn-primary"
+                    onclick="btnPublishReceiveTopicResultDownload(this.id,'config/system/log','request','lightgreen')">
+                    <i class="fa-brands fa-pied-piper-alt"></i> Get Device Log
+                </button>
+                <button id="loadDefaultButton" class="btn-primary"
+                    onclick="btnPublishReceiveTopicResult(this.id, 'config/system/loadDefault', 'yes','lightgreen')">
+                    <i class="fa-solid fa-seedling"></i> LoadDefault
+                </button>
+                <br><br>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

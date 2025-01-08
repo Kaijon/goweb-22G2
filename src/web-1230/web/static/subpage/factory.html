@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Factory page</title>
+
+    <script>
+        var oinfoTimer;
+        // Document Ready Event
+        $(document).ready(function () {
+            // Set default keyboard focus to the macAddress field
+            var macAddressField = document.getElementById('txt_macAddr');
+            if (macAddressField) {
+                console.log("macAddressField found! set it to focus.");
+                macAddressField.focus();
+            }
+            // Update Project Code
+            document.getElementById("txt_modelName").placeholder = "ex: " + "CA-NF22";
+            document.getElementById("txt_skuName").placeholder = "ex: " + projectCode;
+
+            console.log("config.html DOM ready! MQTT is connected:" + isMqttConnected);
+            if (isMqttConnected == true) {
+                defaultTopicSubscribes();
+            }
+            //else
+                // set inner timer
+                //oinfoTimer = setInterval(doInnerChk, 1000);
+
+            // Let step 2 button and checkboxSwitch enable or not
+            var stepInputs = ['txt_operator', 'txt_pl', 'txt_pn'].map(function (id) {
+                return document.getElementById(id);
+            });
+
+            var label = document.querySelector("label[for='fileInput']");
+
+            stepInputs.forEach(function (input) {
+                input.addEventListener('input', function () {
+                    var fileInput = document.getElementById('fileInput');
+                    var selectionSwitch = document.getElementById('selection-switch');
+                    if (stepInputs.every(function (input) { return input.value.trim() !== ''; })) {
+                        fileInput.removeAttribute('disabled');
+                        selectionSwitch.removeAttribute('disabled');
+                        label.classList.add('custom-file-upload');
+                    } else {
+                        fileInput.setAttribute('disabled', 'disabled');
+                        selectionSwitch.setAttribute('disabled', 'disabled');
+                        label.classList.remove('custom-file-upload');
+                    }
+                });
+            });
+
+        });
+        function doInnerChk() { // we will use this function to display upload speed
+            console.log("doInnerChk() called!")
+            if (isMqttConnected == true) {
+                defaultTopicSubscribes();
+                clearTimeout(oinfoTimer);
+            }
+        }
+        function defaultTopicSubscribes() {
+            console.log("defaultTopicSubscribes() called!");
+            // Subscribe to the default topic
+            subscribeTopic(SUB_FACTORY_TOPIC);
+            subscribeTopic("factory/info/#");
+
+            // add version information on Device setting card
+            addDynamicTopicHandler("info", addVerToDeviceInfo);
+            subscribeTopic("info");
+        }
+        document.getElementById('selection-switch').addEventListener('change', function () {
+            var label = document.querySelector('label[for="fileInput"]');
+            if (this.checked) {
+                document.getElementById('step3-button').style.display = 'inline-block';
+                label.textContent = 'Step 2. Click/upload the test package (*.zip) and wait for selection (上傳test檔&等待選擇)';
+            } else {
+                document.getElementById('step3-button').style.display = 'none';
+                label.textContent = 'Step 2. Click/upload the test package (*.zip) and Run immediately. (上傳test檔&平行測全部)';
+                // clear the table for click/upload again. This case only be happened when user click checkbox and then uncheck it.
+                var table = document.getElementById('tstCard');
+                table.innerHTML = "<tr style='border: none;'><th style='background-color: lightgray;'>Test</th><th style='background-color: lightgray;'>Test Item</th><th style='background-color: lightgray;'>Result</th></tr>";
+            }
+        });
+        // add 2 keydown event listener to the input field
+        processEnterKeyAsTab();
+        processQRCodeInput();
+
+    </script>
+</head>
+
+<body>
+    <div class="container mt-3">
+        <!-- Bootstrap Nav Tabs -->
+        <ul class="nav nav-tabs" id="factoryTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <a class="nav-link active" id="deviceSettings-tab" data-toggle="tab" href="#deviceSettings" role="tab"
+                   aria-controls="deviceSettings" aria-selected="true">Device Settings</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" id="testing-tab" data-toggle="tab" href="#testing" role="tab"
+                   aria-controls="testing" aria-selected="false">Testing</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" id="misc-tab" data-toggle="tab" href="#misc" role="tab"
+                   aria-controls="misc" aria-selected="false">Misc</a>
+            </li>
+        </ul>
+    
+        <div class="tab-content" id="factoryTabContent">
+            <!-- Device Settings -->
+            <div class="tab-pane fade show active" id="deviceSettings" role="tabpanel" aria-labelledby="deviceSettings-tab">
+                <div class="card mt-3" style="max-width: 310px;">
+                    <div class="card-body">
+                        <div class="header">Device Settings</div>
+                        <label style="color: blue;">Support QR code scanning. </label><i class="fa-solid fa-qrcode"></i>
+                        <form id="inputForm">
+                            <div style="width: 100%; text-align: center; border-bottom: 1px solid gray; line-height: 0.1em; margin: 10px 0 20px;">
+                                <span style="background:#fff; padding:0 10px; color: gray;">Board site</span>
+                            </div>
+                            <div class="form-group">
+                                <label for="macAddr">MAC Address:</label>
+                                <input type="text" class="form-control" id="txt_macAddr" name="macAddr" maxlength="12"
+                                       placeholder="example: 00112233AaFf " oninput="validateMacInput(this); updatePath()">
+                            </div>
+                            <div class="form-group">
+                                <label for="pcbaSN">PCBA Serial:</label>
+                                <input type="text" class="form-control" id="txt_pcbaSN" name="pcbaSN" maxlength="12"
+                                       placeholder="Max len: 12 ">
+                            </div>
+                            <div style="width: 100%; text-align: center; border-bottom: 1px solid gray; line-height: 0.1em; margin: 10px 0 20px;">
+                                <span style="background:#fff; padding:0 10px; color: gray;">System site</span>
+                            </div>
+                            <div class="form-group">
+                                <label for="systemSerial">System Serial:</label>
+                                <input type="text" class="form-control" id="txt_systemSerial" name="systemSerial" maxlength="12"
+                                       placeholder="Max len: 12 ">
+                            </div>
+                            <div class="form-group">
+                                <label for="modelName">Model Name:</label>
+                                <input type="text" class="form-control" id="txt_modelName" name="modelName" maxlength="12"
+                                       placeholder="example: (project code)">
+                            </div>
+                            <div class="form-group">
+                                <label for="skuName">SKU Name:</label>
+                                <input type="text" class="form-control" id="txt_skuName" name="skuName" maxlength="20"
+                                       placeholder="example: (project code)">
+                            </div>
+                            <hr style="height: 1px; border: none; background: radial-gradient(circle, white, lightgray);">
+                            <input type="button" value="Submit Changes" onclick="submitFacData()" />
+                        </form>
+                    </div>
+                </div>
+            </div>
+    
+            <!-- Testing -->
+            <div class="tab-pane fade" id="testing" role="tabpanel" aria-labelledby="testing-tab">
+                <div class="card mt-3" style="max-width: 1000px;">
+                    <div class="header" id="tstVer">Testing</div>
+                    <hr>
+                    <label id="fwVer">Firmware Version: </label>
+                    <form id="tstItemForm">
+                        <label style="background-color: lightgreen;">Step 1. Required info.</label>
+                        <div class="form-group">
+                            <label for="operator">Operator ID:</label>
+                            <input type="text" class="form-control" id="txt_operator" name="Operator" placeholder="Operator ID">
+                        </div>
+                        <div class="form-group">
+                            <label for="pl">P/L:</label>
+                            <input type="text" class="form-control" id="txt_pl" name="P/L" placeholder="P/L">
+                        </div>
+                        <div class="form-group">
+                            <label for="pn">P/N:</label>
+                            <input type="text" class="form-control" id="txt_pn" name="PN" placeholder="P/N">
+                        </div>
+                    </form>
+                    <hr style="height: 1px; border: none; background: radial-gradient(circle, white, lightgray);">
+                    <div style="display: flex; align-items: center;">
+                        <label for="fileInput" title="PN, P/L, and Operator are required.">
+                            Step 2. Click/upload the test package (*.zip) and Run immediately
+                        </label>
+                        <input type="file" id="fileInput" onchange="loadFile()" style="display: none;" disabled>
+                        <input type="checkbox" id="selection-switch" disabled>
+                    </div>
+                    <div class="card-body">
+                        <table style="border-collapse: collapse; width: 100%; border-radius:5px; overflow: hidden;" id="tstCard">
+                            <tr style="border: none;">
+                                <th style="background-color: lightgray;">Test</th>
+                                <th style="background-color: lightgray;">Test Item</th>
+                                <th style="background-color: lightgray;">Result</th>
+                            </tr>
+                        </table>
+                        <hr style="height: 1px; border: none; background: radial-gradient(circle, white, lightgray);">
+                        <input type="button" id="step3-button" value="Step 3. Test selections only" onclick="entStep3Test()"
+                               style="display: none; background-color: green;" />
+                        <i class="fa-regular fa-file-lines"></i><label id="fullPath">&lt;MAC&gt;.txt</label>
+                        <input type="button" value="Save test result" onclick="saveTestResult()" />
+                    </div>
+                </div>
+            </div>
+    
+            <!-- Misc -->
+            <div class="tab-pane fade" id="misc" role="tabpanel" aria-labelledby="misc-tab">
+                <div class="card mt-3">
+                    <div class="header">Misc</div>
+                    <hr>
+                    <div class="card-body">
+                        <button id="loadDefaultButton" class="btn-primary"
+                                onclick="btnPublishReceiveTopicResult(this.id, 'config/system/loadDefault', 'yes','lightgreen')">
+                            <i class="fa-solid fa-seedling"></i> LoadDefault
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    </body>
+    </html>

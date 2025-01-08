@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <title>Getac</title>
+    <link href="/static/css/style.css" rel="stylesheet" type="text/css" />
+    <script src="js/script.js"></script>
+    <style>
+        #btnUpdate:disabled {
+            background-color: gray;
+        }
+
+        #btnUpdate:not(:disabled) {
+            background-color: blue;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="upload_form_cont">
+            <form id="upload_form" enctype="multipart/form-data" method="post" action="upload.php">
+                <div>
+                    <h2>
+                        <div><label for="image_file">Please select firmware image</label></div>
+                    </h2>
+                    <div>
+                        <input type="file" name="image_file" id="image_file" accept=".img"
+                            onchange="document.getElementById('btnUpdate').disabled = false;" />
+                    </div>
+                </div>
+                <div>
+                    <input type="button" id='btnUpdate' value="Update" onclick="startUploading()" disabled />
+                </div>
+
+                <div id="progress_info">
+                    <div id="progress"></div>
+                    <div id="progress_percent">&nbsp;</div>
+                    <div class="clear_both"></div>
+                    <div>
+                        <div id="b_transfered">&nbsp;</div>
+                        <div class="clear_both"></div>
+                    </div>
+                    <div id="upload_response"></div>
+                </div>
+            </form>
+            <div>
+                <label style="color: red;">
+                    Warning: Please do not power off the device or refresh web page during the update process.
+                </label><br>
+            </div>
+            <img id="preview" />
+            <div class="progress">
+                <div id="part1" class="progress-bar progress-bar-animated progress-bar-striped"               role="progressbar" style="width: 0%" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100"></div>
+                <div id="part2" class="progress-bar progress-bar-animated progress-bar-striped bg-warning"    role="progressbar" style="width: 0%" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100"></div>
+                <div id="part3" class="progress-bar progress-bar-animated progress-bar-striped bg-warning"    role="progressbar" style="width: 0%" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100"></div>
+                <div id="part4" class="progress-bar progress-bar-animated progress-bar-striped bg-danger"     role="progressbar" style="width: 0%" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100"></div>
+                <div id="part5" class="progress-bar progress-bar-animated progress-bar-striped bg-success"    role="progressbar" style="width: 0%" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100"></div>
+                <div id="part6" class="progress-bar prgoress-bar-animated progress-bar-striped bg-success"    role="progressbar" style="width: 0%" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100"></div>
+                <div id="part7" class="progress-bar progress-bar-animated progress-bar-striped bg-danger"     role="progressbar" style="width: 0%" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>            
+        </div>
+    </div>
+</body>
+<script>
+        var oinfoTimer;
+        // Document Ready Event
+        $(document).ready(function () {
+            console.log("config.html DOM ready! MQTT is connected:" + isMqttConnected);
+            if (isMqttConnected == true) {
+                defaultTopicSubscribes();
+            }
+            //else
+                // set inner timer
+                //oinfoTimer = setInterval(doInnerChk, 1000);
+            const progress1 = document.getElementById('part1');
+            const progress2 = document.getElementById('part2');
+            const progress3 = document.getElementById('part3');
+            const progress4 = document.getElementById('part4');
+            const progress5 = document.getElementById('part5');
+            const progress6 = document.getElementById('part6');
+            const progress7 = document.getElementById('part7');
+            progress1.addEventListener('click', click_progress1);
+            progress2.addEventListener('click', click_progress2);
+            progress3.addEventListener('click', click_progress3);
+            progress4.addEventListener('click', click_progress4);
+            progress5.addEventListener('click', click_progress5);
+            progress6.addEventListener('click', click_progress6);
+            progress7.addEventListener('click', click_progress7);
+
+            function click_progress1() {
+                try {
+                    console.log("click_progress1 called!");
+                    progress1.style.width = 10 + '%';
+                    progress1.setAttribute('aria-valuenow', 10); // Optionally update the aria-valuenow attribute
+                } catch (error) {
+                    console.error("Error in handleFota1Message: ", error);
+                }
+            }
+
+            function click_progress2() {
+                try {
+                    console.log("click_progress2 called!");
+                    progress2.style.width = 10 + '%';
+                    progress2.setAttribute('aria-valuenow', 10); // Optionally update the aria-valuenow attribute
+                } catch (error) {
+                    console.error("Error in handleFota2Message: ", error);
+                }
+            }
+            function click_progress3() {
+                try {
+                    console.log("click_progress3 called!");
+                    progress3.style.width = 20 + '%';
+                    progress3.setAttribute('aria-valuenow', 20); // Optionally update the aria-valuenow attribute
+                } catch (error) {
+                    console.error("Error in handleFota3Message: ", error);
+                }
+            }
+            function click_progress4() {
+                try {
+                    console.log("click_progress4 called!");
+                    progress4.style.width = 30 + '%';
+                    progress4.setAttribute('aria-valuenow', 30); // Optionally update the aria-valuenow attribute
+                } catch (error) {
+                    console.error("Error in handleFota4Message: ", error);
+                }
+            }
+            function click_progress5() {
+                try {
+                    console.log("click_progress5 called!");
+                    progress5.style.width = 15 + '%';
+                    progress5.setAttribute('aria-valuenow', 15); // Optionally update the aria-valuenow attribute
+                } catch (error) {
+                    console.error("Error in handleFota4Message: ", error);
+                }
+            }
+            function click_progress6() {
+                try {
+                    console.log("click_progress6 called!");
+                    progress6.style.width = 15 + '%';
+                    progress6.setAttribute('aria-valuenow', 15); // Optionally update the aria-valuenow attribute
+                    //Auto reload to HomePage, 
+                    setInterval(function() {
+                        // Reload the current page
+                        console.log("Reload Home Page");
+                        window.location.href = "/";
+                    }, 5000);
+                } catch (error) {
+                    console.error("Error in handleFota6Message: ", error);
+                }
+            }
+            //Not used for nand-based FOTA
+            function click_progress7() {
+                try {
+                    console.log("click_progress7 called!");
+                    progress7.style.width = 15 + '%';
+                    progress7.setAttribute('aria-valuenow', 15); // Optionally update the aria-valuenow attribute
+                } catch (error) {
+                    console.error("Error in handleFota7Message: ", error);
+                }
+                document.getElementById('btnUpdate').value = "Finish Process, Reboot Device";
+            }
+            // Simulate receiving a message from MQTT (for debugging purposes)
+            // Simulate receiving a message from MQTT (for debugging purposes)
+            // In your real implementation, this will be triggered by your MQTT message handling logic
+            //progressMessage({ payloadString: '50' }); // Example payload to set progress to 50%
+
+        });
+        function doInnerChk() { // we will use this function to display upload speed
+            console.log("doInnerChk() called!")
+            if (isMqttConnected == true) {
+                defaultTopicSubscribes();
+                clearTimeout(oinfoTimer);
+            }
+        }
+
+        function defaultTopicSubscribes() {
+            console.log("defaultTopicSubscribes() called!");
+            // Subscribe to the default topic
+            subscribeTopic(SUB_FOTA_TOPIC);
+            subscribeTopic(SUB_EVENTS_TOPIC);
+        }
+
+        //TEST
+        document.addEventListener('DOMContentLoaded', (event) => {
+            const progress = document.getElementById('part1');
+            
+            function updateProgressBar(value) {
+                progress.style.width = value + '%';
+                progress.setAttribute('aria-valuenow', value); // Optionally update the aria-valuenow attribute
+            }
+
+            function progressMessage(message) {
+                try {
+                    console.log("handleFota1Message called!");
+                    // Example logic to update the progress bar
+                    let progressValue = parseInt(message.payloadString);
+                    updateProgressBar(progressValue);
+                } catch (error) {
+                    console.error("Error in handleFota1Message: ", error);
+                }
+            }
+
+            // Simulate receiving a message from MQTT (for debugging purposes)
+            // In your real implementation, this will be triggered by your MQTT message handling logic
+            progressMessage({ payloadString: '50' }); // Example payload to set progress to 50%
+
+        });        
+</script>
+</html>

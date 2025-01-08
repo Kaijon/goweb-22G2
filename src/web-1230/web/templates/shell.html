@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Shell</title>
+    <style>
+        body {
+            font-family: monospace;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        #terminal {
+            background-color: #1e1e1e;
+            color: #ffffff;
+            padding: 15px;
+            border-radius: 5px;
+            min-height: 300px;
+            overflow-y: auto;
+            margin: 20px 0;
+        }
+        .error {
+            color: #ff6b6b;
+        }
+        .command {
+            color: #69f0ae;
+        }
+        .output {
+            color: #ffffff;
+            white-space: pre-wrap;
+        }
+        #commandInput {
+            width: 80%;
+            padding: 8px;
+            background-color: #2e2e2e;
+            color: #ffffff;
+            border: 1px solid #3e3e3e;
+            border-radius: 4px;
+        }
+        button {
+            padding: 8px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>Camera Console</h1>
+    <div id="terminal"></div>
+    <div>
+        <input type="text" id="commandInput" placeholder="Enter command...">
+        <button onclick="sendCommand()">Execute</button>
+    </div>
+
+    <script>
+        let ws;
+        const terminal = document.getElementById('terminal');
+        const commandInput = document.getElementById('commandInput');
+
+        function connect() {
+            ws = new WebSocket(`ws://${window.location.host}/ws/shell`);
+
+            ws.onopen = () => {
+                appendToTerminal('Connected to server', 'output');
+            };
+
+            ws.onclose = () => {
+                appendToTerminal('Disconnected from server', 'error');
+                // Try to reconnect after 5 seconds
+                setTimeout(connect, 5000);
+            };
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                if (data.type === 'error') {
+                    appendToTerminal(data.error, 'error');
+                    if (data.output) {
+                        appendToTerminal(data.output, 'output');
+                    }
+                } else if (data.type === 'output') {
+                    appendToTerminal(data.output, 'output');
+                }
+            };
+
+            ws.onerror = (error) => {
+                appendToTerminal('WebSocket error occurred', 'error');
+            };
+        }
+
+        function clearTerminal() {
+            terminal.innerHTML = '';
+        }        
+
+        function sendCommand() {
+            const command = commandInput.value;
+            if (!command) return;
+
+            clearTerminal();            
+            appendToTerminal('$ ' + command, 'command');
+            
+            ws.send(JSON.stringify({
+                type: 'command',
+                command: command
+            }));
+
+            commandInput.value = '';
+        }
+
+        function appendToTerminal(text, type) {
+            const div = document.createElement('div');
+            div.className = type;
+            div.textContent = text;
+            terminal.appendChild(div);
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        // Handle Enter key
+        commandInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendCommand();
+            }
+        });
+
+        // Initial connection
+        connect();
+    </script>
+</body>
+</html>

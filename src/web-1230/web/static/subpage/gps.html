@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>GPS Page</title>
+
+    <script>
+
+        var oinfoTimer;
+        // Document Ready Event
+        $(document).ready(function () {
+            console.log("gps.html DOM ready! MQTT is connected:" + isMqttConnected);
+            if (isMqttConnected == true) {
+                // do subscribe after connected in different pages. 
+                defaultTopicSubscribes();
+            }
+            //else
+                // set inner timer
+                //oinfoTimer = setInterval(doInnerChk, 1000);
+        })
+        function doInnerChk() { // we will use this function to display upload speed
+            console.log("doInnerChk() called!")
+            if (isMqttConnected == true) {
+                defaultTopicSubscribes();
+                clearTimeout(oinfoTimer);
+            }
+        }
+        function defaultTopicSubscribes() {
+            console.log("defaultTopicSubscribes() called!");
+            // Subscribe to the default topic
+            subscribeTopic(SUB_GPS_TOPIC);
+        }
+    </script>
+</head>
+
+<body>
+    <div class="card">
+        <div class="header">GPS NMEA Dashboard</div>
+        <hr><br>
+        <div class="textarea-fullscreen-container">
+            <textarea class="responsive-fullscreen-textarea" id="txtAr_nmea"
+                placeholder=" MQTT Message for recording GPS NMEA..."></textarea>
+        </div>
+        <div>
+            <input type="button" id="statusButton" value="Turn NMEA ON" onclick="toggleStatus()" />
+        </div>
+        <div>
+            <button class="btn-primary" onclick="copyToClipboard()">copy NMEA to ClipBoard</button>
+            <button type="button" id="btn_Clear_Nmea" class="btn-primary" onclick="clear_Nmea();">Clear All Text
+            </button>
+        </div>
+    </div>
+</body>
+
+</html>

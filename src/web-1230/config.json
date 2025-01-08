@@ -1,0 +1,18 @@
+{
+  "mode" : "production",
+  "server": {
+    "http_port": ":8080"
+  },
+  "streams": {
+    "wide": {
+      "on_demand": false,
+      "url": "rtsp://user:password@192.168.5.49:554/live/0"
+    }    
+  },
+  "streams": {
+    "narrow": {
+      "on_demand": false,
+      "url": "rtsp://user:password@192.168.5.49:554/live/1"
+    }    
+  }
+}
