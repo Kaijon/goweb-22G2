@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>Information Page</title>
+    <link href="/static/css/style.css" rel="stylesheet" type="text/css" />
+    <script src="/static/js/Jqueiry-3.5.1.min.js"></script> <!-- Add this line to load jQuery -->
+    <script src="/static/js/mqtt.js"></script>
+</head>
+
+<body id="info-page">
+    <script>
+        //var oinfoTimer;
+        //oinfoTimer = setInterval(doInnerChk, 2000);
+        var oinfoTimer = setInterval(doInnerChk, 2000);
+
+        function checkMqttAndSubscribe() {
+            if (isMqttConnected) {
+                console.log('isMattConnected is true... subscribe to topic /info')
+                defaultTopicSubscribes();
+            } //else {
+                // set inner timer
+                //console.log('isMattConnected is false... set inner timer');
+                //oinfoTimer = setInterval(doInnerChk, 2000);
+            //}
+        }
+
+        $(window).on('load', function () {
+            console.log(`DOM ready! MQTT is connected: ${isMqttConnected}`);
+            checkMqttAndSubscribe();
+            sessionStorage.setItem('isPageLoaded', 'true'); // Set the flag to true when the page is first loaded or F5
+        })
+
+        $(document).ready(function () {
+            // sessionStorage will be cleared when F5 but kept when reload.
+            var isPageLoaded = sessionStorage.getItem('isPageLoaded') === 'true';
+            if (isPageLoaded) { // Only run the code if the page has been loaded before
+                checkMqttAndSubscribe();
+            }
+        });
+
+        // we will use this function to monitor MQTT until INFO show up after DOM ready
+        function doInnerChk() {
+            console.log("doInnerChk() called! isMqttConnected=" + isMqttConnected);
+            // Get the card-body element by its ID
+            if (doesElementExist(SUB_INFO_AREA) && (isMqttConnected == true)) {
+                defaultTopicSubscribes();
+                clearTimeout(oinfoTimer);
+            }
+        }
+        function defaultTopicSubscribes() {
+            console.log("defaultTopicSubscribes() called!");
+            // Subscribe to the default topic
+            subscribeTopic(SUB_INFO_TOPIC);
+            //subscribeTopic(SUB_EVENTS_TOPIC);            
+        }
+    </script>
+        <div id="message-receiver-info">
+            <div class="card-body" id="txt_sysInfo">
+                <p class="card-text">Getting information from device, please wait...</p>
+            </div>
+        </div>
+</body>
+</html>
